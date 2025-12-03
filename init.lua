@@ -22,7 +22,8 @@ vim.opt.modeline    = false
 vim.opt.swapfile    = false
 vim.opt.undofile    = true
 
-vim.o.shell        = "bash"
+vim.o.shell        = "nu"
+vim.opt.shellpipe = "out+err>"
 vim.o.shellquote   = ""
 vim.o.shellxquote  = ""
 vim.o.shellcmdflag = "-c"
