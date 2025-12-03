@@ -61,6 +61,7 @@ vim.lsp.config.lua_ls = {
 }
 
 vim.lsp.enable { "clangd", "lua_ls" }
+vim.o.autocomplete = true
 
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function()
@@ -192,6 +193,7 @@ local lazytab = {{
     }
 }, {
     "saghen/blink.cmp",
+    enabled = false,
     event = "VeryLazy",
     version = "1.*",
     opts = {
