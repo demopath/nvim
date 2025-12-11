@@ -1,7 +1,7 @@
 local word = {
     pos = nil,
     id  = nil,
-    line = false,
+    line = true,
     count = 0,
 }
 

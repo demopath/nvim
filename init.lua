@@ -12,18 +12,18 @@ vim.opt.softtabstop = 4    -- 插入模式 tab 宽度
 vim.opt.expandtab   = true -- tab 转空格
 vim.opt.shiftround  = true -- tab 整数倍
 vim.opt.scrolloff   = 4    -- 屏幕上下边距
-vim.opt.ignorecase  = true -- 忽略大小写
-vim.opt.smartcase   = true -- 智能忽略
+-- vim.opt.ignorecase  = true -- 忽略大小写
+-- vim.opt.smartcase   = true -- 智能忽略
 vim.opt.title       = true -- 标题
 vim.opt.titlestring = "%t"
 vim.opt.fillchars   = { fold = ' ', diff = ' ', eob = ' ', vert = '▏' }
 vim.opt.modeline    = false
 
-vim.opt.swapfile    = false
-vim.opt.undofile    = true
+vim.opt.swapfile = false
+vim.opt.undofile = true
 
 vim.o.shell        = "nu"
-vim.opt.shellpipe = "out+err>"
+vim.opt.shellpipe  = "out+err>"
 vim.o.shellquote   = ""
 vim.o.shellxquote  = ""
 vim.o.shellcmdflag = "-c"
@@ -41,9 +41,14 @@ vim.diagnostic.config({
 })
 
 vim.lsp.config.clangd = {
-    cmd = { "clangd" },
+    cmd = {
+        "clangd",
+    },
     root_markers = { ".clangd", "compile_commands.json", ".git" },
     filetypes = { "c", "cpp" },
+    init_options = {
+        fallbackFlags = { "-ID:\\scoop\\apps\\tcc\\current\\tcc\\include" }
+    }
 }
 
 vim.lsp.config.lua_ls = {
@@ -61,14 +66,13 @@ vim.lsp.config.lua_ls = {
 }
 
 vim.lsp.enable { "clangd", "lua_ls" }
-vim.o.autocomplete = true
 
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function()
         vim.opt.foldlevel = 99
         vim.opt.foldmethod = "expr"
         vim.opt.foldexpr = "v:lua.vim.lsp.foldexpr()"
-        vim.cmd("set formatoptions-=ro")
+        -- vim.cmd("set formatoptions-=ro")
     end,
 })
 
@@ -77,8 +81,8 @@ vim.api.nvim_create_autocmd("TextYankPost", {
     callback = function() vim.hl.on_yank() end,
 })
 
-vim.keymap.set("n", "<leader>cc", ":sour $MYVIMRC<cr>", {desc = "应用设置"})
-vim.keymap.set("n", "<leader>ci", ":edit $MYVIMRC<cr>", {desc = "打开设置"})
+vim.keymap.set("n", "<leader>cc", ":sour $MYVIMRC<cr>", { desc = "应用设置" })
+vim.keymap.set("n", "<leader>ci", ":edit $MYVIMRC<cr>", { desc = "打开设置" })
 
 local lazyload = function(tab)
     if not tab or #tab < 1 then return end
@@ -100,6 +104,7 @@ end
 
 local lazytab = {{
     "Mofiqul/vscode.nvim",
+    enabled = not vim.g.vscode,
     config = function()
         local c = require('vscode.colors').get_colors()
         require('vscode').setup {
@@ -142,9 +147,10 @@ local lazytab = {{
 }, {
     'nvim-mini/mini.cursorword',
     version = '*',
+    enabled = not vim.g.vscode,
     event = "VeryLazy",
     init = function()
-        vim.g.minicursorword_disable = true
+        -- vim.g.minicursorword_disable = true
     end,
     opts = {},
 }, {
@@ -153,14 +159,14 @@ local lazytab = {{
     opts = {
         keymaps = {
             file_panel = {
-                { "n", "q", "<cmd>tabc<cr>" },
+                { "n", "q", "<cmd>tabc | G status<cr>" },
             },
             view = {
-                { "n", "q", "<cmd>tabc<cr>" },
+                { "n", "q", "<cmd>tabc | G status<cr>" },
                 { "n", "s", "<cmd>Gitsigns stage_hunk<cr>"}, -- 存储差异
             },
             file_history_panel = {
-                { "n", "q", ":tabc<cr>" },
+                { "n", "q", ":tabc | G status<cr>" },
             },
         },
         hooks = {
@@ -193,7 +199,6 @@ local lazytab = {{
     }
 }, {
     "saghen/blink.cmp",
-    enabled = false,
     event = "VeryLazy",
     version = "1.*",
     opts = {
@@ -383,6 +388,9 @@ local dbgtab = {
     gcc = {
         makeprg = 'gcc -g "%"',
         command = { "gdb" }
+    },
+    tcc = {
+        makeprg = 'tcc -run "%"',
     }
 }
 

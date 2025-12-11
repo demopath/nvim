@@ -57,6 +57,8 @@ local cache = {}
 
 local enum_hint = vim.api.nvim_create_namespace("enum_hint")
 local enum_last = ""
+
+---@diagnostic disable-next-line: unused-function, unused-local
 local function hint(str)
     local row = vim.api.nvim_win_get_cursor(0)[1] - 1
     vim.api.nvim_buf_clear_namespace(0, enum_hint, 0, -1)
