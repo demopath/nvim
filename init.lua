@@ -65,7 +65,7 @@ vim.lsp.config.lua_ls = {
     }
 }
 
-vim.lsp.enable { "clangd", "lua_ls" }
+vim.lsp.enable { "clangd" }
 
 vim.api.nvim_create_autocmd("LspAttach", {
     callback = function()
