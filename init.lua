@@ -16,6 +16,8 @@ vim.opt.title       = true -- 标题
 vim.opt.titlestring = "%t"
 vim.opt.fillchars   = { fold = ' ', diff = ' ', eob = ' ', vert = '▏' }
 vim.opt.modeline    = false
+vim.opt.wrap        = false
+vim.opt.clipboard = "unnamedplus"
 
 vim.opt.swapfile = false
 vim.opt.undofile = true
@@ -41,6 +43,9 @@ vim.lsp.config.clangd = {
     cmd = { "clangd", },
     root_markers = { ".clangd", "compile_commands.json", ".git" },
     filetypes = { "c", "cpp" },
+    init_options = {
+        fallbackFlags = { "-ID:\\scoop\\apps\\tcc\\current\\tcc\\include" }
+    }
 }
 
 vim.lsp.enable { "clangd" }
@@ -61,6 +66,29 @@ vim.api.nvim_create_autocmd("TextYankPost", {
 vim.keymap.set("n", "<leader>cc", ":sour $MYVIMRC<cr>", { desc = "应用设置" })
 vim.keymap.set("n", "<leader>ci", ":edit $MYVIMRC<cr>", { desc = "打开设置" })
 
+local windows = vim.fn.has('win32')==1 or vim.fn.has('win64')==1
+if false then
+    -- 切换到 normal 自动转英文
+    local ffi = require("ffi")
+    local user32 = ffi.load("user32")
+    local imm32 = ffi.load("imm32")
+    ffi.cdef[[
+        void* GetForegroundWindow(void);
+        void* ImmGetDefaultIMEWnd(void* hwnd);
+        int SendMessageW(void* hWnd, int Msg, int wParam, int lParam);
+    ]]
+    local ime_en = {
+        group = vim.api.nvim_create_augroup("ImeAutoGroup", { clear = true }),
+        callback = function (cmd, data) 
+            local fhwnd = user32.GetForegroundWindow()
+            local ihwnd = imm32.ImmGetDefaultIMEWnd(fhwnd) 
+            user32.SendMessageW(ihwnd, 0x283, 6, 0) -- 关闭 ime
+            user32.SendMessageW(ihwnd, 0x283, 2, 0) -- 切换状态
+        end
+    } 
+    vim.api.nvim_create_autocmd("InsertLeave", ime_en)
+end
+
 vim.pack.add {
     "https://github.com/Mofiqul/vscode.nvim",
     "https://github.com/tpope/vim-sleuth",
@@ -79,36 +107,40 @@ vim.pack.add {
     { src = "https://github.com/saghen/blink.cmp", version = vim.version.range "1.*" },
 }
 
-local vsc = require('vscode.colors').get_colors()
-require('vscode').setup {
-    transparent = not vim.g.neovide, -- 透明
-    group_overrides = {
-        GrugFarInputLabel       = { fg = vsc.vscMediumBlue     }, -- grug-far
-        GrugFarResultsPath      = { fg = vsc.vscDarkYellow     },
-        GrugFarInputPlaceholder = { fg = vsc.vscLeftLight      }, -- 提示
-        CursorLine              = { bg = vsc.vscTabOther       }, -- 当前行
-        MiniCursorword          = { bg = vsc.vscLeftMid        },
-        DiffAdd                 = { bg = vsc.vscDiffGreenDark  }, -- git diff
-        DiffDelete              = { bg = vsc.vscLeftDark       },
-        DiffChange              = { bg = vsc.vscLeftDark       },
-        DiffText                = { bg = vsc.vscDiffGreenLight },
-        NeoTreeRootName         = { fg = vsc.vscLeftLight      },
-        NeoTreeGitConflict      = { fg = vsc.vscDarkYellow     },
-        NeoTreeGitUntracked     = { fg = vsc.vscDarkYellow     },
-        NeoTreeCursorLine       = { bg = vsc.vscTabOther       },
-        DiffviewFilePanelInsertions = { link = "NonText"  },
-        DiffviewFilePanelDeletions  = { link = "NonText"  },
-        DiffviewFilePanelCounter    = { link = "NonText" },
-        DiffviewFilePanelPath       = { link = "NonText" },
-        DiffviewNonText             = { fg = vsc.vscLeftDark },
+
+if not vim.g.vscode then
+    local vsc = require('vscode.colors').get_colors()
+    require('vscode').setup {
+        transparent = not vim.g.neovide, -- 透明
+        group_overrides = {
+            GrugFarInputLabel       = { fg = vsc.vscMediumBlue     }, -- grug-far
+            GrugFarResultsPath      = { fg = vsc.vscDarkYellow     },
+            GrugFarInputPlaceholder = { fg = vsc.vscLeftLight      }, -- 提示
+            CursorLine              = { bg = vsc.vscTabOther       }, -- 当前行
+            MiniCursorword          = { bg = vsc.vscLeftMid        },
+            DiffAdd                 = { bg = vsc.vscDiffGreenDark  }, -- git diff
+            DiffDelete              = { bg = vsc.vscLeftDark       },
+            DiffChange              = { bg = vsc.vscLeftDark       },
+            DiffText                = { bg = vsc.vscDiffGreenLight },
+            NeoTreeRootName         = { fg = vsc.vscLeftLight      },
+            NeoTreeGitConflict      = { fg = vsc.vscDarkYellow     },
+            NeoTreeGitUntracked     = { fg = vsc.vscDarkYellow     },
+            NeoTreeCursorLine       = { bg = vsc.vscTabOther       },
+            DiffviewFilePanelInsertions = { link = "NonText"  },
+            DiffviewFilePanelDeletions  = { link = "NonText"  },
+            DiffviewFilePanelCounter    = { link = "NonText" },
+            DiffviewFilePanelPath       = { link = "NonText" },
+            DiffviewNonText             = { fg = vsc.vscLeftDark },
+        }
     }
-}
-vim.cmd.colorscheme "vscode"
+    vim.cmd.colorscheme "vscode"
+end
 
-require('vscode').setup()
-
+require("diffview").setup()
 require('mini.cursorword').setup()
 
+vim.g.loaded_netrw = 1
+vim.g.loaded_netrwPlugin = 1
 require('lualine').setup {
     options = {
         theme = "jellybeans",
@@ -165,21 +197,6 @@ vim.g.easy_align_delimiters = {
     },
 }
 
-require("diffview").setup {
-    keymaps = {
-        file_panel = {
-            { "n", "q", "<cmd>tabc | G status<cr>" },
-        },
-        view = {
-            { "n", "q", "<cmd>tabc | G status<cr>" },
-            { "n", "s", "<cmd>Gitsigns stage_hunk<cr>"}, -- 存储差异
-        },
-        file_history_panel = {
-            { "n", "q", ":tabc | G status<cr>" },
-        },
-    },
-}
-
 require('blink.cmp').setup { 
     completion = {
         ghost_text = { enabled = function() return vim.g.blink_ghost end },
@@ -193,13 +210,8 @@ require('blink.cmp').setup {
 
 
 require('grug-far').setup { 
-    keymaps = { close = { n = 'q' } },
     engines = {
-        ripgrep = {
-            placeholders = {
-                enabled = false,
-            },
-        },
+        ripgrep = { placeholders = { enabled = false } },
         astgrep = { placeholders = { enabled = false } },
     },
     startInInsertMode = false,
@@ -237,12 +249,6 @@ require('neo-tree').setup {
 
 }
 
-local vimt = function(str)
-    return function()
-        vim.g[str] = not vim.g[str]
-    end
-end
-
 vim.keymap.set('v', '<leader>a' , "<Plug>(EasyAlign)", { desc = "文本对齐" })
 vim.keymap.set("n", "<leader>ff", ":Neotree toggle<cr>")
 
@@ -257,9 +263,6 @@ vim.keymap.set("n", "<leader>hh", function()
 end, {desc = "查找"})
 
 vim.keymap.set('n', '<leader>uw', "<cmd>set wrap!<cr>", { desc = "自动换行" })
-vim.keymap.set('n', '<leader>ul', "<cmd>IBLToggle<cr>", { desc = "缩进线"   })
-vim.keymap.set('n', '<leader>ug', vimt("blink_ghost") , { desc = "幽灵文本" })
-vim.keymap.set('n', '<leader>ua', vimt("blink_menu")  , { desc = "自动提示" })
 vim.keymap.set('n', '<leader>gd', "<cmd>DiffviewOpen<cr>" ,       { desc = "diff"    })
 vim.keymap.set('n', '<leader>gh', "<cmd>DiffviewFileHistory<cr>", { desc = "history" })
 
@@ -267,6 +270,10 @@ vim.keymap.set('n', 'gp', "<cmd>Gitsigns preview_hunk<cr>", { desc = '查看修�
 vim.keymap.set('n', 'do', "<cmd>Gitsigns reset_hunk<cr>"  , { desc = '取消修改' })
 vim.keymap.set('n', ']c', "<cmd>Gitsigns next_hunk<cr>"   , { desc = '下个修改' })
 vim.keymap.set('n', '[c', "<cmd>Gitsigns prev_hunk<cr>"   , { desc = '上个修改' })
+
+vim.keymap.set('i', '<c-x>', function()
+    vim.g.blink_menu = not vim.g.blink_menu
+end, { desc = "自动提示" })
 
 local dbgtab = {
     eabi = {
@@ -329,12 +336,13 @@ end
 
 vim.keymap.set("n", "<leader>fc", cdgit, { desc = "进入目录" })
 
+local word = require "word"
+vim.keymap.set("n", "<leader>tt", word.toggle)
+
 do return end
 local define = require "define"
 vim.keymap.set("n", "<c-n>", define.switch(1))
 vim.keymap.set("n", "<c-p>", define.switch(-1))
 vim.keymap.set("n", "<c-k>", define.switch(0))
 
-local word = require "word"
-vim.keymap.set("n", "<leader>tt", word.toggle)
 
