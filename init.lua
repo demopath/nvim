@@ -398,6 +398,3 @@ end
 
 vim.keymap.set("n", "<leader>fc", cdgit, { desc = "进入目录" })
 
-local word = require "word"
-vim.keymap.set("n", "<leader>tt", word.toggle)
-
